@@ -3,7 +3,9 @@ defmodule Crawly.Spider do
   A behavior module for implementing a Crawly Spider
 
   A Spider is a module which is responsible for defining:
-  1. `init/0` function, which must return a keyword list with start_urls list
+  1. `init/0` function, which must return a keyword list with start_urls list.
+      Optionally, :device_type can be set to any of the following supported types:
+
   2. `base_url/0` function responsible for filtering out requests not related to
       a given website
   3. `parse_item/1` function which is responsible for parsing the downloaded
@@ -15,7 +17,7 @@ defmodule Crawly.Spider do
       global settings defined in the config.
   """
 
-  @callback init() :: [start_urls: list()]
+  @callback init() :: [start_urls: list(), device_type: binary()]
 
   @callback base_url() :: binary()
 

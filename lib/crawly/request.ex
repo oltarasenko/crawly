@@ -4,15 +4,16 @@ defmodule Crawly.Request do
 
   Defines Crawly request structure.
   """
-  ###===========================================================================
+  ### ===========================================================================
   ### Type definitions
-  ###===========================================================================
+  ### ===========================================================================
   defstruct url: nil,
             headers: [],
             prev_response: nil,
             options: [],
             middlewares: [],
-            retries: 0
+            retries: 0,
+            device_type: :desktop
 
   @type header() :: {key(), value()}
   @type url() :: binary()
@@ -22,22 +23,30 @@ defmodule Crawly.Request do
 
   @type option :: {atom(), binary()}
 
-  @type t :: %__MODULE__{
-               url: url(),
-               headers: [header()],
-               prev_response: %{},
-               options: [option()],
-               middlewares: [atom()],
-               retries: non_neg_integer()
-             }
+  @type device_type ::
+          :desktop
+          | :mobile
+          | :game_console
+          | :tablet
+          | :ereader
 
-  ###===========================================================================
+  @type t :: %__MODULE__{
+          url: url(),
+          headers: [header()],
+          prev_response: %{},
+          options: [option()],
+          middlewares: [atom()],
+          retries: non_neg_integer(),
+          device_type: device_type()
+        }
+
+  ### ===========================================================================
   ### API functions
-  ###===========================================================================
+  ### ===========================================================================
   @doc """
   Create new Crawly.Request from url, headers and options
   """
-  @spec new(url, headers, options) :: request
+  @spec new(url, headers, options, device_type) :: request
         when url: binary(),
              headers: [term()],
              options: [term()],
@@ -64,10 +73,11 @@ defmodule Crawly.Request do
   parameter.
   """
   @spec new(url, headers, options, middlewares) :: request
+        # TODO: improve typespec here
         when url: binary(),
              headers: [term()],
              options: [term()],
-             middlewares: [term()], # TODO: improve typespec here
+             middlewares: [term()],
              request: Crawly.Request.t()
   def new(url, headers, options, middlewares) do
     %Crawly.Request{

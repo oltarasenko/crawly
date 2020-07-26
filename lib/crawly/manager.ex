@@ -40,7 +40,7 @@ defmodule Crawly.Manager do
 
   def init(spider_name) do
     # Getting spider start urls
-    [start_urls: urls] = spider_name.init()
+    [start_urls: urls, device_type: device_type] = spider_name.init()
 
     # Start DataStorage worker
     {:ok, data_storage_pid} = Crawly.DataStorage.start_worker(spider_name)
@@ -53,7 +53,13 @@ defmodule Crawly.Manager do
     Process.link(request_storage_pid)
 
     # Store start requests
-    requests = Enum.map(urls, fn url -> Crawly.Request.new(url) end)
+    requests =
+      Enum.map(urls, fn url ->
+        Crawly.Request.new(
+          url,
+          device_type: device_type
+        )
+      end)
 
     :ok = Crawly.RequestsStorage.store(spider_name, requests)
 
@@ -109,11 +115,11 @@ defmodule Crawly.Manager do
       |> Utils.get_settings(state.name)
       |> maybe_convert_to_integer()
 
-      maybe_stop_spider_by_timeout(
-        state.name,
+    maybe_stop_spider_by_timeout(
+      state.name,
       delta,
-        closespider_timeout_limit
-      )
+      closespider_timeout_limit
+    )
 
     tref =
       Process.send_after(
