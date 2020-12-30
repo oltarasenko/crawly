@@ -13,6 +13,9 @@ defmodule Crawly.Engine do
           known_spiders: [module()]
         }
   @type started_spiders() :: %{optional(module()) => identifier()}
+  @type list_spiders() :: [
+          %{name: module(), status: :stopped | :started, pid: identifier()}
+        ]
 
   @type spider_info() :: %{
           name: module(),
@@ -94,12 +97,16 @@ defmodule Crawly.Engine do
              result:
                :ok | {:error, :spider_not_running} | {:error, :spider_not_found}
   def stop_spider(spider_name, reason \\ :ignore) do
-    case Crawly.Utils.get_settings(:on_spider_closed_callback, spider_name) do
-      nil -> :ignore
-      fun -> apply(fun, [reason])
-    end
+    GenServer.call(__MODULE__, {:stop_spider, spider_name, reason})
+  end
 
-    GenServer.call(__MODULE__, {:stop_spider, spider_name})
+  @spec stop_all_spiders(atom()) :: :ok
+  @doc "Stops all spiders, regardless of their current state. Runs :on_spider_closed_callback if available only if spider was running."
+  def stop_all_spiders(reason \\ :ignore) do
+    Crawly.Utils.list_spiders()
+    |> Enum.each(fn name -> stop_spider(name, reason) end)
+
+    :ok
   end
 
   @spec list_known_spiders() :: [spider_info()]
@@ -197,14 +204,24 @@ defmodule Crawly.Engine do
     {:reply, msg, %Crawly.Engine{state | started_spiders: new_started_spiders}}
   end
 
-  def handle_call({:stop_spider, spider_name}, _form, state) do
+  def handle_call({:stop_spider, spider_name, reason}, _form, state) do
     {msg, new_started_spiders} =
       case Map.pop(state.started_spiders, spider_name) do
         {nil, _} ->
           {{:error, :spider_not_running}, state.started_spiders}
 
         {{pid, _crawl_id}, new_started_spiders} ->
+          # stop the spider
           Crawly.EngineSup.stop_spider(pid)
+
+          # run the callback
+          case Crawly.Utils.get_settings(
+                 :on_spider_closed_callback,
+                 spider_name
+               ) do
+            nil -> :ignore
+            fun -> apply(fun, [reason])
+          end
 
           {:ok, new_started_spiders}
       end

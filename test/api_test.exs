@@ -4,6 +4,17 @@ defmodule APITest do
 
   @opts Crawly.API.Router.init([])
 
+  setup do
+    kill_spiders()
+    on_exit(&kill_spiders/0)
+  end
+
+  defp kill_spiders do
+    Crawly.Engine.running_spiders()
+    |> Map.keys()
+    |> Enum.each(&Crawly.Engine.stop_spider/1)
+  end
+
   test "returns welcome" do
     conn =
       :get
