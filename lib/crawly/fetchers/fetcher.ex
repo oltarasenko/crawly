@@ -11,6 +11,6 @@ defmodule Crawly.Fetchers.Fetcher do
   @callback fetch(request, options) :: {:ok, response} | {:error, reason}
             when request: Crawly.Request.t(),
                  response: Crawly.Response.t(),
-                 options: map(),
+                 options: keyword(),
                  reason: term()
 end
