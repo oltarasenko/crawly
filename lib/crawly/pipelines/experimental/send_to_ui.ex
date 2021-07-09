@@ -15,6 +15,8 @@ defmodule Crawly.Pipelines.Experimental.SendToUI do
 
     spider_name = state.spider_name |> Atom.to_string()
 
+    ui_module = Keyword.get(opts, :ui_module, CrawlyUI)
+
     case Keyword.get(opts, :ui_node) do
       nil ->
         Logger.debug(
@@ -23,7 +25,7 @@ defmodule Crawly.Pipelines.Experimental.SendToUI do
         )
 
       ui_node ->
-        :rpc.cast(ui_node, CrawlyUI, :store_item, [
+        :rpc.cast(ui_node, ui_module, :store_item, [
           spider_name,
           item,
           job_tag,
